@@ -91,6 +91,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"sync"
 	"unsafe"
 )
 
@@ -104,6 +105,7 @@ type Complex struct {
 	z    C.mpc_t
 	prec uint
 	init bool
+	once sync.Once
 }
 
 // New allocates a value with the given precision in bits (like MPFR/MPC). If bits==0, DefaultPrec is used.
@@ -114,21 +116,21 @@ func New(bits uint) *Complex {
 	c := &Complex{prec: bits}
 	C.mpc_init2(&c.z[0], C.mpfr_prec_t(bits))
 	c.init = true
-	runtime.SetFinalizer(c, func(cc *Complex) {
-		if cc.init {
-			C.mpc_clear(&cc.z[0])
-			cc.init = false
-		}
-	})
+	runtime.SetFinalizer(c, func(cc *Complex) { cc.Close() })
 	return c
 }
 
 // Close frees C resources.
 func (c *Complex) Close() {
-	if c != nil && c.init {
-		C.mpc_clear(&c.z[0])
-		c.init = false
+	if c == nil {
+		return
 	}
+	c.once.Do(func() {
+		if c.init {
+			C.mpc_clear(&c.z[0])
+			c.init = false
+		}
+	})
 }
 
 // Prec returns precision in bits.

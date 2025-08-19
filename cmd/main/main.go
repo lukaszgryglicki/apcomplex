@@ -42,7 +42,7 @@ func main() {
 			d = 1
 		}
 		if d > 1<<20 {
-			d = 1<<20 // sanity cap
+			d = 1 << 20 // sanity cap
 		}
 	}
 
@@ -68,4 +68,3 @@ func main() {
 	// pow2 := ap.New(*prec).Pow(two, k)
 	// fmt.Printf("2^1024 (exact integer): %s\n", pow2.RealStringFixed(0))
 }
-
