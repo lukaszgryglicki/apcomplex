@@ -2,6 +2,7 @@ package apcomplex
 
 import (
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 	"testing"
@@ -122,5 +123,82 @@ func TestTrigIdentityReal(t *testing.T) {
 	sum := Add(s2, c2)
 	if !equalApprox(sum, tp("1"), 1e-28) {
 		t.Fatalf("sin^2+cos^2 != 1 for real x, got %s", sum.StringFixed(30))
+	}
+}
+
+// --- High-precision tests for exp/log and very large integers ---
+
+// bigPow2String returns the exact decimal string of 2^n using math/big.
+func bigPow2String(n uint) string {
+	b := new(big.Int).Lsh(big.NewInt(1), n)
+	return b.String()
+}
+
+// trimPlusZero removes a leading '+' and normalizes "-0" to "0".
+func trimPlusZero(s string) string {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "+") {
+		s = s[1:]
+	}
+	if s == "-0" {
+		return "0"
+	}
+	return s
+}
+
+func TestFormatPow2_1024_AllDigits(t *testing.T) {
+	want := bigPow2String(1024)
+	z, err := Parse(want, 2048)
+	if err != nil {
+		t.Fatalf("Parse(2^1024) failed: %v", err)
+	}
+	got := z.RealStringFixed(0)
+	if trimPlusZero(got) != want {
+		t.Fatalf("format mismatch for 2^1024: got %q", got)
+	}
+	if trimPlusZero(z.ImagStringFixed(0)) != "0" {
+		t.Fatalf("imag part not zero: %q", z.ImagStringFixed(0))
+	}
+}
+
+func TestExpLog_Pow2_1024_AllDigits(t *testing.T) {
+	prec := uint(4096)
+	want := bigPow2String(1024)
+	two := MustParse("2", prec)
+	ln2 := New(prec).Log(two)
+	k := MustParse("1024", prec)
+	tval := New(prec).Mul(ln2, k)
+	pow := New(prec).Exp(tval) // exp(ln(2)*1024) = 2^1024
+	got := pow.RealStringFixed(0)
+	if trimPlusZero(got) != want {
+		t.Fatalf("exp(log(2)*1024) mismatch: got %q", got)
+	}
+	if trimPlusZero(pow.ImagStringFixed(0)) != "0" {
+		t.Fatalf("imag part of exp(log(2)*1024) not zero: %q", pow.ImagStringFixed(0))
+	}
+}
+
+func TestExpLog_RoundTrip_VeryLargeComplex(t *testing.T) {
+	prec := uint(1024)
+	w := MustParse("1e100+1e100i", prec)
+	lw := New(prec).Log(w)
+	back := New(prec).Exp(lw)
+	if !equalApprox(back, w, 1e-25) {
+		t.Fatalf("exp(log(w)) != w for very large w, got %s vs %s",
+			back.StringScientific(30), w.StringScientific(30))
+	}
+}
+
+func TestLog1AndExp0Exact(t *testing.T) {
+	prec := uint(256)
+	one := MustParse("1", prec)
+	zero := MustParse("0", prec)
+	ln1 := New(prec).Log(one)
+	if trimPlusZero(ln1.RealStringFixed(0)) != "0" || trimPlusZero(ln1.ImagStringFixed(0)) != "0" {
+		t.Fatalf("log(1) != 0, got %s", ln1.StringFixed(0))
+	}
+	e0 := New(prec).Exp(zero)
+	if trimPlusZero(e0.RealStringFixed(0)) != "1" || trimPlusZero(e0.ImagStringFixed(0)) != "0" {
+		t.Fatalf("exp(0) != 1, got %s", e0.StringFixed(0))
 	}
 }

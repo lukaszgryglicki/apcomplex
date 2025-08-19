@@ -191,31 +191,35 @@ func (c *Complex) SetString(s string) error {
 
 // SetBase sets c = re + i*im, parsing both parts using the given base (<=0 defaults to 10).
 func (c *Complex) SetBase(re, im string, base int) error {
-    if !c.init { return errors.New("apcomplex: not initialized") }
-    var r, i C.mpfr_t
-    C.mpfr_init2(&r[0], C.mpfr_prec_t(c.prec))
-    C.mpfr_init2(&i[0], C.mpfr_prec_t(c.prec))
-    defer C.mpfr_clear(&r[0])
-    defer C.mpfr_clear(&i[0])
+	if !c.init {
+		return errors.New("apcomplex: not initialized")
+	}
+	var r, i C.mpfr_t
+	C.mpfr_init2(&r[0], C.mpfr_prec_t(c.prec))
+	C.mpfr_init2(&i[0], C.mpfr_prec_t(c.prec))
+	defer C.mpfr_clear(&r[0])
+	defer C.mpfr_clear(&i[0])
 
-    cr := C.CString(strings.TrimSpace(re))
-    ci := C.CString(strings.TrimSpace(im))
-    defer C.free(unsafe.Pointer(cr))
-    defer C.free(unsafe.Pointer(ci))
+	cr := C.CString(strings.TrimSpace(re))
+	ci := C.CString(strings.TrimSpace(im))
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
 
-    b := C.int(base)
-    if base <= 0 { b = 10 }
-    if C.mpfr_set_str(&r[0], cr, b, C.MPFR_RNDN) != 0 {
-        return fmt.Errorf("apcomplex: invalid real part %q", re)
-    }
-    if C.mpfr_set_str(&i[0], ci, b, C.MPFR_RNDN) != 0 {
-        return fmt.Errorf("apcomplex: invalid imaginary part %q", im)
-    }
-    C.mpc_set_fr_fr(&c.z[0], &r[0], &i[0], defaultRnd)
-    return nil
+	b := C.int(base)
+	if base <= 0 {
+		b = 10
+	}
+	if C.mpfr_set_str(&r[0], cr, b, C.MPFR_RNDN) != 0 {
+		return fmt.Errorf("apcomplex: invalid real part %q", re)
+	}
+	if C.mpfr_set_str(&i[0], ci, b, C.MPFR_RNDN) != 0 {
+		return fmt.Errorf("apcomplex: invalid imaginary part %q", im)
+	}
+	C.mpc_set_fr_fr(&c.z[0], &r[0], &i[0], defaultRnd)
+	return nil
 }
 
-// Set is SetBase with base 10.
+// SetParts sets c = re + i*im using base-10 strings.
 func (c *Complex) SetParts(re, im string) error { return c.SetBase(re, im, 10) }
 
 // normalizeToPair converts common forms into separate real/imag strings.
