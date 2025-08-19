@@ -28,19 +28,27 @@ package apcomplex
 // Helpers to format MPFR/MPC values to C strings we can return to Go.
 static char* apc_mpfr_to_str_fixed(mpfr_srcptr x, int digits) {
     if (digits < 0) digits = 0;
-    size_t n = mpfr_snprintf(NULL, 0, "%.*Rf", digits, *x);
-    char *buf = (char*)malloc(n + 1);
+    int n = mpfr_snprintf(NULL, 0, "%.*Rf", digits, *x);
+    if (n < 0) return NULL;
+    char *buf = (char*)malloc((size_t)n + 1);
     if (!buf) return NULL;
-    mpfr_snprintf(buf, n + 1, "%.*Rf", digits, *x);
+    if (mpfr_snprintf(buf, (size_t)n + 1, "%.*Rf", digits, *x) < 0) {
+        free(buf);
+        return NULL;
+    }
     return buf;
 }
 
 static char* apc_mpfr_to_str_sci(mpfr_srcptr x, int digits) {
     if (digits < 1) digits = 1;
-    size_t n = mpfr_snprintf(NULL, 0, "%.*Re", digits, *x);
-    char *buf = (char*)malloc(n + 1);
+    int n = mpfr_snprintf(NULL, 0, "%.*Re", digits, *x);
+    if (n < 0) return NULL;
+    char *buf = (char*)malloc((size_t)n + 1);
     if (!buf) return NULL;
-    mpfr_snprintf(buf, n + 1, "%.*Re", digits, *x);
+    if (mpfr_snprintf(buf, (size_t)n + 1, "%.*Re", digits, *x) < 0) {
+        free(buf);
+        return NULL;
+    }
     return buf;
 }
 
