@@ -19,7 +19,7 @@
 package apcomplex
 
 /*
-#cgo CFLAGS: -O2
+#cgo CFLAGS: -O3
 #cgo LDFLAGS: -lmpc -lmpfr -lgmp
 #include <stdlib.h>
 #include <string.h>
@@ -96,6 +96,7 @@ import (
 
 // default rounding mode (nearest, nearest)
 var defaultRnd = C.mpc_rnd_t(C.MPC_RNDNN)
+var DefaultPrec uint = 256
 
 // Complex is an arbitrary-precision complex backed by GNU MPC/MPFR.
 // Use New/Parse; zero value is not usable.
@@ -105,10 +106,10 @@ type Complex struct {
 	init bool
 }
 
-// New allocates a value with the given precision in bits (like MPFR/MPC). If bits==0, 53 is used.
+// New allocates a value with the given precision in bits (like MPFR/MPC). If bits==0, DefaultPrec is used.
 func New(bits uint) *Complex {
 	if bits == 0 {
-		bits = 53
+		bits = DefaultPrec
 	}
 	c := &Complex{prec: bits}
 	C.mpc_init2(&c.z[0], C.mpfr_prec_t(bits))
@@ -139,7 +140,7 @@ func (c *Complex) SetPrec(bits uint) *Complex {
 		panic("apcomplex: not initialized")
 	}
 	if bits == 0 {
-		bits = 53
+		bits = DefaultPrec
 	}
 	if bits == c.prec {
 		return c
