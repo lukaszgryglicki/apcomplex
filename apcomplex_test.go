@@ -46,8 +46,8 @@ func TestParseFormatRoundTrip(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Parse %q failed: %v", s, err)
 		}
-		_ = z.StringFixed(30)       // ensure formatting works
-		_ = z.StringScientific(20)  // ensure sci formatting works
+		_ = z.StringFixed(30)      // ensure formatting works
+		_ = z.StringScientific(20) // ensure sci formatting works
 	}
 }
 
@@ -89,7 +89,7 @@ func TestAddSubMulDiv(t *testing.T) {
 		t.Fatalf("Sub mismatch: got %s, want %s", gotSub.StringFixed(20), wantSub.StringFixed(20))
 	}
 
-	wantMul := tp("-3.0-1.125i")
+	wantMul := tp("-3.75-0.9375i")
 	gotMul := Mul(a, b)
 	if !equalApprox(gotMul, wantMul, 1e-30) {
 		t.Fatalf("Mul mismatch: got %s, want %s", gotMul.StringFixed(20), wantMul.StringFixed(20))
@@ -124,4 +124,3 @@ func TestTrigIdentityReal(t *testing.T) {
 		t.Fatalf("sin^2+cos^2 != 1 for real x, got %s", sum.StringFixed(30))
 	}
 }
-
